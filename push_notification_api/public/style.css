@@ -1,0 +1,46 @@
+body {
+	max-width: 60ch;
+	margin-inline: auto;
+	padding: 1em;
+
+	font-family: sans-serif;
+	line-height: 1.5;
+}
+
+h1 {
+	text-align: center;
+}
+
+p.warning {
+	padding: 1em;
+	background-color: #fdffd6;
+	border-radius: 5px;
+	border-left: 5px /* matches radius */ solid #ead658;
+}
+
+p.error {
+	padding: 1em;
+	background-color: #ffd6d6;
+	border-radius: 5px;
+	border-left: 5px /* matches radius */ solid #ea5858;
+}
+
+pre {
+	padding: 1em;
+	background-color: #eee;
+	border-radius: 5px;
+
+	max-width: 100%;
+	overflow-x: auto;
+}
+
+button {
+    border: none;
+    padding: 1em;
+    background-color: #eeeeee;
+    border-radius: 5px;
+}
+
+button:hover { background-color: #d8d8d8; }
+
+button:active { background-color: #b6b6b6; }

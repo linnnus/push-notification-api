@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>Push notification API</title>
+		<script type="module" src="/script.js"></script>
+		<link rel="stylesheet" href="/style.css">
+		<meta name="viewport" content="width=device-width">
+	</head>
+	<body>
+		<h1>Push notification API</h1>
+		<p id="jsError" class="error">This site requires JavaScript to work. Either you have disabled JavaScript in your browser settings or the script failed to load.</p>
+		<p class="warning">This is just a personal project. I can't guarantee it'll be online next week or next month. Feel free to play around with it, but don't expect it to keep working.</p>
+		<p>With this site you can generate a unique URL which can be used to send push notifications to your device. Click the button below to generate a URL for this device.</p>
+		<center><button id="generateToken" disabled>Generate URL</button></center>
+		<h2>How do I use it?</h2>
+		<p>Now that you have a token that's unique to your device, you can use it by sending a post request. Below is an example using <code>curl</code>.</p>
+		<pre><code>curl https://notifications.linus.onl/api/send-notification/<em data-replace-token>token</em> \
+   --request POST \
+   --header "Content-Type: application/json" \
+   --data '{
+      "title": "<em>your title</em>",
+      "message": "<em>your message</em>",
+      "url": "<em>http://example.com</em>"
+   }'</code></pre>
+		<p>Here is an example using Python and <a href="https://pypi.org/project/requests/">requests</a>, if that's more your cup of tea.</p>
+		<pre><code>import requests
+
+token = "<em data-replace-token>your token</em>"
+data = {
+   "title": "<em>your title</em>",     # This is required
+   "message": "<em>your message</em>", # This is optional
+   "url": "<em>your url</em>",         # Also optional
+}
+response = requests.post(f"https://notifications.linus.onl/api/send-notification/{token}", json=data)
+response.raise_for_status()
+print(response.json())</code></pre>
+		<p>Note that a response from a <code>/api</code> endpoint are only guaranteed to be valid JSON if it has a successful status code. The call to <code>raise_for_status</code> is crucial in the ebove example.</p>
+		<h2>How does it work?</h2>
+		<p>This project works using the <a href="">Web Push protocol</a> and a service worker to <a href="https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerRegistration/showNotification">send notifications</a>. Much of the code is based on <a href="https://web.dev/push-notifications-overview/">the Chrome DevRel team's excellent guide</a>.</p>
+		<p>I was inspired by <a href="https://twitter.com/h43z">@h43z</a> who made <a href="https://pushurl.43z.one/">basically the exact same thing but better</a>. I did, however, decide not to read any of their code before writing my own implementation. I figured it would be a better learning experience if I didn't just blindly copy-paste whatever they'd done. I do have a suspicion that their implementation is much more robust, though.</p>
+	</body>
+</html>

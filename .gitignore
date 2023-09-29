@@ -1,0 +1,13 @@
+# Private key
+*.pem
+
+# Database stuff
+*.dat
+*.dir
+*.bak
+
+# Cached code objects
+__pycache__
+
+# Nix output link
+result
