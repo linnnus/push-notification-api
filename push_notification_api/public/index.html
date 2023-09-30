@@ -12,6 +12,7 @@
 		<p class="warning">This is just a personal project. I can't guarantee it'll be online next week or next month. Feel free to play around with it, but don't expect it to keep working.</p>
 		<p>With this site you can generate a unique URL which can be used to send push notifications to your device. Click the button below to generate a URL for this device.</p>
 		<center><button id="generateToken" disabled>Generate URL</button></center>
+		<p>Make sure your browser (the actual <code>.exe</code>, <code>.app</code>, etc.) has permissions to send notifications at the OS level. It's not enough to accept the "notifications.linus.onl wants to send notifications" popup; your browser <em>also</em> has to have those permissions.</em></p>
 		<h2>How do I use it?</h2>
 		<p>Now that you have a token that's unique to your device, you can use it by sending a post request. Below is an example using <code>curl</code>.</p>
 		<pre><code>curl https://notifications.linus.onl/api/send-notification/<em data-replace-token>token</em> \
