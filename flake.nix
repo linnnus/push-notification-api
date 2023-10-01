@@ -64,10 +64,10 @@
       nixosModules.default = { pkgs, lib, config, ... }:
         let
           inherit (lib) mkEnableOption mkOption mkIf types;
-          cfg = config.my.services.push-notification-api;
+          cfg = config.services.push-notification-api;
         in
         {
-          options.my.services.push-notification-api = {
+          options.services.push-notification-api = {
             enable = mkEnableOption "Push notification API";
 
             package = mkOption {
