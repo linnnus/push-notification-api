@@ -116,6 +116,21 @@
                 ExecStart = ''
                  "${cfg.package}"/bin/push-notification-api --port ${toString cfg.port} --host "${cfg.host}"
                 '';
+
+                # Harden service
+                NoNewPrivileges = "yes";
+                PrivateTmp = "yes";
+                PrivateDevices = "yes";
+                DevicePolicy = "closed";
+                ProtectControlGroups = "yes";
+                ProtectKernelModules = "yes";
+                ProtectKernelTunables = "yes";
+                RestrictAddressFamilies = "AF_UNIX AF_INET AF_INET6 AF_NETLINK";
+                RestrictNamespaces = "yes";
+                RestrictRealtime = "yes";
+                RestrictSUIDSGID = "yes";
+                MemoryDenyWriteExecute = "yes";
+                LockPersonality = "yes";
               };
             };
 
