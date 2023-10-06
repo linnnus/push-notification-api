@@ -12,7 +12,7 @@ def main():
     if args.dev:
         print("Running development server")
         from werkzeug.serving import run_simple
-        run_simple(args.host, args.port, app, use_debugger=True, use_reloader=True)
+        run_simple(args.host, args.port, app, use_debugger=True)
     else:
         from gunicorn.app.base import BaseApplication
 
