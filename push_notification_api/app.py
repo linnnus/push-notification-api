@@ -1,5 +1,5 @@
 import cryptography.hazmat.primitives.serialization
-import dbm.dumb
+import shelve
 import hashlib
 import json
 import os
@@ -67,7 +67,7 @@ def application_server_key(vapid: py_vapid.Vapid02):
     return { "key": key }
 
 @app.route("/api/submit-subscription", method="POST")
-def submit_subscription(db: dbm.dumb._Database, request: werkzeug.Request):
+def submit_subscription(db: shelve.Shelf, request: werkzeug.Request):
     try:
         subscription = request.json
         validate_subscription_json(subscription)
@@ -78,7 +78,8 @@ def submit_subscription(db: dbm.dumb._Database, request: werkzeug.Request):
         raise exc
 
     token = hash_json(subscription)[:15]
-    db[token] = json.dumps(subscription)
+    db[token] = subscription
+    print("just set", db[token])
     return { "token": token }
 
 def validate_subscription_json(subscription: t.Any):
@@ -120,14 +121,14 @@ def hash_json(data: t.Any) -> str:
     return hash.hexdigest()
 
 @app.route("/api/send-notification/<token>", method="POST")
-def send_notification(request: werkzeug.Request, db: dbm.dumb._Database, token: str):
+def send_notification(db: shelve.Shelf, request: werkzeug.Request, token: str):
     try:
-        subscription_text = db[token]
-    except KeyError:
+        subscription = db[token]
+    except KeyError as e:
+        print("HALÅÅÅÅÅÅ", e)
         exc = werkzeug.exceptions.HTTPException(f"Unknown token: {token}")
         exc.code = 404
         raise exc
-    subscription = json.loads(subscription_text)
 
     try:
         notification_text = request.data
@@ -177,7 +178,7 @@ app.wsgi_app = werkzeug.middleware.proxy_fix.ProxyFix(app.wsgi_app)
 
 # Connect to database.
 db_path = "./tokens"
-app.ressources["db"] = dbm.dumb.open(db_path, "c")
+app.ressources["db"] = shelve.open("tokens.db", "c")
 
 # Load/generate private key.
 private_key_path = "./private_key.pem"

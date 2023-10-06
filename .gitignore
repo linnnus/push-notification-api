@@ -2,6 +2,7 @@
 *.pem
 
 # Database stuff
+*.db
 *.dat
 *.dir
 *.bak
