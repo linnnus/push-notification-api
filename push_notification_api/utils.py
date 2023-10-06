@@ -1,5 +1,6 @@
 import functools
 import inspect
+import logging
 import time
 import typing as t
 import werkzeug
@@ -72,13 +73,22 @@ class Application:
             endpoint, args = urls.match()
 
             request = werkzeug.Request(environ)
-            injectables = { "request": request, **self.ressources, **args }
+            injectables = { "app": self, "request": request, **self.ressources, **args }
             response = self._endpoints[endpoint](injectables)
             assert isinstance(response, werkzeug.Response)
             return response(environ, start_response)
         except werkzeug.exceptions.HTTPException as e:
             # Render default error page
             return e(environ, start_response)
+
+    def log(self, level: str, *args, **kwargs):
+        if not hasattr(self, "logger"):
+            self.logger = logging.Logger("app")
+        if not self.logger.hasHandlers():
+            self.logger.addHandler(logging.StreamHandler())
+        if self.logger.level == logging.NOTSET:
+            self.logger.setLevel(logging.INFO)
+        getattr(self.logger, level)(*args, **kwargs)
 
     def __call__(self, *args, **kwargs):
         """Make :ref:`Application` instances directly callable as WSGI applications."""

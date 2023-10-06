@@ -17,7 +17,7 @@ app = utils.Application()
 
 ## Middleware
 
-def convert_json(request: werkzeug.Request, next):
+def convert_json(app: utils.Application, request: werkzeug.Request, next):
     """Middleware that converts all response and return-values (except
     :ref:`werkzeug.wrappers.Response`) in `/api` routes to JSON responses."""
 
@@ -25,8 +25,10 @@ def convert_json(request: werkzeug.Request, next):
         try:
             body = next()
         except werkzeug.exceptions.HTTPException as e:
+            app.log("exception", "Got HTTP exception")
             body = e
         except Exception as e:
+            app.log("exception", "Got other exception")
             body = werkzeug.exceptions.InternalServerError(original_exception=e)
 
         if isinstance(body, werkzeug.exceptions.HTTPException):

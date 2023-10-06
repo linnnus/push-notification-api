@@ -20,7 +20,7 @@
             pycparser
             pywebpush
             werkzeug
-            waitress
+            gunicorn
         ]);
       in
       {
