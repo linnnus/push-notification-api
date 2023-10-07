@@ -13,6 +13,8 @@ import werkzeug.middleware.shared_data
 import werkzeug.routing.exceptions
 import werkzeug.serving
 
+# TODO: We should probably not be a way to delete tokens if they are leaked.
+
 app = utils.Application()
 
 ## Middleware
