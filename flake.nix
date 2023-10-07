@@ -76,16 +76,16 @@
               type = types.package;
             };
 
-            host = mkOption {
-              description = "Host(name) to passed to server";
-              type = types.nonEmptyStr;
-              default = "0.0.0.0";
+            socket-path = mkOption {
+              description = "Path to socket where the server will listen.";
+              type = types.str;
+              default = "/run/push-notification-api.sock";
             };
 
-            port = mkOption {
-              description = "Port to listen for requests on";
-              type = types.port;
-              default = 8000;
+            socket-owner = mkOption {
+              description = "Owner of socket at `socket-path`. Change this if you are not using NGINX as the reverse proxy.";
+              type = types.str;
+              default = "nginx"; # TODO: Don't hardcode this value.
             };
 
             openFirewall = mkEnableOption "Poke holes in the firewall to permit LAN connections.";
@@ -94,7 +94,7 @@
           config = mkIf cfg.enable {
             # Create a user to run the server under.
             users.users.push-notification-api = {
-              description = "Runs daily dukse reminder";
+              description = "Runs push notification API service";
               group = "push-notification-api";
               isSystemUser = true;
               home = "/srv/push-notification-api";
@@ -104,17 +104,18 @@
 
             # Create a service which runs the server.
             systemd.services.push-notification-api = {
+              description = "Push notification API server";
+
               wantedBy = [ "multi-user.target" ];
-              after = [ "network.target" "netowrk-online.target" ];
-              wants = [ "network.target" ];
+              after = [ "network.target" ];
 
               serviceConfig = {
-                Type = "simple";
+                Type = "notify";
                 User = config.users.users.push-notification-api.name;
                 Group = config.users.users.push-notification-api.group;
                 WorkingDirectory = config.users.users.push-notification-api.home;
                 ExecStart = ''
-                 "${cfg.package}"/bin/push-notification-api --port ${toString cfg.port} --host "${cfg.host}"
+                 "${cfg.package}"/bin/push-notification-api
                 '';
 
                 # Harden service
@@ -131,6 +132,19 @@
                 RestrictSUIDSGID = "yes";
                 MemoryDenyWriteExecute = "yes";
                 LockPersonality = "yes";
+              };
+            };
+
+            # Create a socket which the server will listen on
+            systemd.sockets.push-notification-api = {
+              description = "Socket where the service of the same name answers HTTP requests.";
+
+              wantedBy = [ "multi-user.target" ];
+
+              socketConfig = {
+                ListenStream = cfg.socket-path;
+                SocketUser = cfg.socket-owner;
+                SocketMode = "600";
               };
             };
 
