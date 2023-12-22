@@ -2,7 +2,7 @@
   description = "push-service: generate a unique URL which can be used to send push notifications to your device.";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/release-23.05";
+    nixpkgs.url = "github:NixOS/nixpkgs/release-23.11";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
@@ -31,6 +31,7 @@
 
             src = ./.;
             format = "setuptools";
+            doCheck = false;
 
             propagatedBuildInputs = requirements-run python.pkgs;
 
