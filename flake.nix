@@ -88,8 +88,6 @@
               type = types.str;
               default = "nginx"; # TODO: Don't hardcode this value.
             };
-
-            openFirewall = mkEnableOption "Poke holes in the firewall to permit LAN connections.";
           };
 
           config = mkIf cfg.enable {
@@ -147,10 +145,6 @@
                 SocketUser = cfg.socket-owner;
                 SocketMode = "600";
               };
-            };
-
-            networking.firewall = mkIf cfg.openFirewall {
-              allowedTCPPorts = [ cfg.port ];
             };
           };
         };
