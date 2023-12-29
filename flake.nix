@@ -105,7 +105,6 @@
             systemd.services.push-notification-api = {
               description = "Push notification API server";
 
-              wantedBy = [ "multi-user.target" ];
               after = [ "network.target" ];
 
               serviceConfig = {
