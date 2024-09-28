@@ -16,7 +16,7 @@
 		<p class="warning">Keep in mind that this is just a personal project. I'll try to keep it online, but I make no guarantees that it'll be online next year or even next week.</p>
 		<p>With this site you can generate a unique URL which can be used to send push notifications to your device. Click the button below to generate a URL for this device.</p>
 		<center><button id="generateToken" disabled>Generate URL</button></center>
-		<p>Make sure your browser (the actual <code>.exe</code>, <code>.app</code>, etc.) has permissions to send notifications at the OS level. It's not enough to accept the "notifications.linus.onl wants to send notifications" popup; your browser <em>also</em> has to have those permissions.</em></p>
+		<p>Make sure your browser (the actual <code>.exe</code>, <code>.app</code>, etc.) has permissions to send notifications at the OS level. It's not enough to accept the "notifications.linus.onl wants to send notifications" pop-up; your browser <em>also</em> has to have those permissions.</em></p>
 		<h2>How do I use it?</h2>
 		<p>Now that you have a token that's unique to your device, you can use it by sending a post request. Below is an example using <code>curl</code>.</p>
 		<pre><code>curl https://notifications.linus.onl/api/send-notification/<em data-replace-token>token</em> \
@@ -39,7 +39,7 @@ data = {
 response = requests.post(f"https://notifications.linus.onl/api/send-notification/{token}", json=data)
 response.raise_for_status()
 print(response.json())</code></pre>
-		<p>Note that a response from a <code>/api</code> endpoint are only guaranteed to be valid JSON if it has a successful status code. The call to <code>raise_for_status</code> is crucial in the ebove example.</p>
+		<p>Note that a response from a <code>/api</code> endpoint are only guaranteed to be valid JSON if it has a successful status code. The call to <code>raise_for_status</code> is crucial in the above example.</p>
 		<h2>How does it work?</h2>
 		<p>This project works using the <a href="">Web Push protocol</a> and a service worker to <a href="https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerRegistration/showNotification">send notifications</a>. Much of the code is based on <a href="https://web.dev/push-notifications-overview/">the Chrome DevRel team's excellent guide</a>.</p>
 		<p>I was inspired by <a href="https://twitter.com/h43z">@h43z</a> who made <a href="https://pushurl.43z.one/">basically the exact same thing but better</a>. I did, however, decide not to read any of their code before writing my own implementation. I figured it would be a better learning experience if I didn't just blindly copy-paste whatever they'd done. I do have a suspicion that their implementation is much more robust, though.</p>
