@@ -40,7 +40,9 @@ async function ensureNotifications() {
 	} else if (Notification.permission !== "denied") {
 		const permission = await Notification.requestPermission();
 		if (permission !== "granted") {
-			throw new Error("You did not grant notification permissions.");
+			throw new Error(
+				"You did not grant notification permissions.",
+			);
 		}
 	}
 }
@@ -51,8 +53,10 @@ async function ensureNotifications() {
 // Note that it takes a bit of time for a new version of the service worker to
 // take over. During development, you should probably just clear it manually.
 async function registerServiceWorker() {
-	if (!('serviceWorker' in navigator)) {
-		throw new Error("Service Worker isn't supported on this browser.");
+	if (!("serviceWorker" in navigator)) {
+		throw new Error(
+			"Service Worker isn't supported on this browser.",
+		);
 	}
 	await navigator.serviceWorker.register("/service-worker.js");
 	return navigator.serviceWorker.ready;
@@ -60,7 +64,7 @@ async function registerServiceWorker() {
 
 // Sets up a connection to Web Push if one does not already exist. Returns a PushSubscription.
 async function subscribeUserToPush(registration) {
-	if (!('PushManager' in window)) {
+	if (!("PushManager" in window)) {
 		throw new Error("Push isn't supported on this browser.");
 	}
 
@@ -70,16 +74,25 @@ async function subscribeUserToPush(registration) {
 	}
 	const { data: { key } } = await response.json();
 
-	const pushSubscription = await registration.pushManager.getSubscription();
+	const pushSubscription = await registration.pushManager
+		.getSubscription();
 	if (pushSubscription) {
-		if (base64ArrayBuffer(pushSubscription.options.applicationServerKey) === key) {
+		if (
+			base64ArrayBuffer(
+				pushSubscription.options.applicationServerKey,
+			) === key
+		) {
 			// The existing subscription is using the same key - no need to do anything furhter.
-			console.debug("An existing push subscription with matching key was found.");
+			console.debug(
+				"An existing push subscription with matching key was found.",
+			);
 			return pushSubscription;
 		} else {
 			// The existing subscription is using an outdated key. Let's uninstall the old one
 			// and continue as if it never existed.
-			console.debug("An existing push subscription with a different key was found. Uninstalling...");
+			console.debug(
+				"An existing push subscription with a different key was found. Uninstalling...",
+			);
 			await pushSubscription.unsubscribe();
 		}
 	}
@@ -103,12 +116,18 @@ async function saveSubscription(pushSubscription) {
 		body: JSON.stringify(pushSubscription),
 	});
 	if (!response.ok) {
-		throw new Error("Got invalid resposne upon info submission:" + response.statusText);
+		throw new Error(
+			"Got invalid resposne upon info submission:" +
+				response.statusText,
+		);
 	}
 
 	const json = await response.json();
 	if (!json.success) {
-		throw new Error("API request to store subscription info failed: " + json.info.message);
+		throw new Error(
+			"API request to store subscription info failed: " +
+				json.info.message,
+		);
 	}
 	return json.data.token;
 }
@@ -124,7 +143,9 @@ function showToken(token) {
 	p.append(".");
 	button.parentElement.replaceWith(p);
 
-	document.querySelectorAll("em[data-replace-token]").forEach(e => e.replaceWith(token));
+	document.querySelectorAll("em[data-replace-token]").forEach((e) =>
+		e.replaceWith(token)
+	);
 }
 
 /*
@@ -135,7 +156,7 @@ function asyncPipe(...tasks) {
 	tasks = tasks ?? [];
 
 	if (tasks.length === 0) {
-		return x => x;
+		return (x) => x;
 	}
 
 	return async function (request) {
@@ -144,7 +165,11 @@ function asyncPipe(...tasks) {
 		while (index < tasks.length) {
 			request = await tasks[index](request);
 
-			console.debug("%s: %o", camelCaseToSentence(tasks[index].name), request);
+			console.debug(
+				"%s: %o",
+				camelCaseToSentence(tasks[index].name),
+				request,
+			);
 			index++;
 		}
 
@@ -153,10 +178,11 @@ function asyncPipe(...tasks) {
 }
 
 function camelCaseToSentence(str) {
-	return str.replace(/[A-Z]/g, letter => ` ${letter.toLowerCase()}`);
+	return str.replace(/[A-Z]/g, (letter) => ` ${letter.toLowerCase()}`);
 }
 
 // Based on https://gist.github.com/jonleighton/958841
+// deno-fmt-ignore
 function base64ArrayBuffer(arrayBuffer) {
 	let base64    = ''
 	const encodings = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'

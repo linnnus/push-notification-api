@@ -6,24 +6,29 @@
     flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, flake-utils, ... }:
-    flake-utils.lib.eachDefaultSystem (system:
-      let
+  outputs = {
+    self,
+    nixpkgs,
+    flake-utils,
+    ...
+  }:
+    flake-utils.lib.eachDefaultSystem (
+      system: let
         pkgs = nixpkgs.legacyPackages.${system};
 
         python = pkgs.python311;
 
         # Rebuidlments for running.
-        requirements-run = (ps: with ps; [
+        requirements-run = ps:
+          with ps; [
             cryptography
             py-vapid
             pycparser
             pywebpush
             werkzeug
             gunicorn
-        ]);
-      in
-      {
+          ];
+      in {
         packages = {
           default = python.pkgs.buildPythonApplication rec {
             pname = "push-notification-api";
@@ -56,20 +61,34 @@
           };
         };
 
+        formatter = pkgs.writeShellScriptBin "format.sh" ''
+          # Format Nix files
+          ${pkgs.alejandra}/bin/alejandra --quiet -- "$@"
 
-        devShell = pkgs.mkShell {
-          nativeBuildInputs = [ (python.withPackages requirements-run) ];
+          # Format JavaScript files
+          ${pkgs.deno}/bin/deno fmt --use-tabs=true --indent-width=8 --single-quote=false --quiet -- "$@"
+
+          # Format Python files
+          ${pkgs.black}/bin/black --quiet -- "$@"
+        '';
+
+        devShells.default = pkgs.mkShell {
+          nativeBuildInputs = [(python.withPackages requirements-run)];
         };
       }
-    ) // {
-      nixosModules.default = { pkgs, lib, config, ... }:
-        let
-          inherit (lib) mkEnableOption mkOption mkIf types;
-          cfg = config.services.push-notification-api;
-        in
-        {
-          options.services.push-notification-api = {
-            enable = mkEnableOption "Push notification API";
+    )
+    // {
+      nixosModules.default = {
+        pkgs,
+        lib,
+        config,
+        ...
+      }: let
+        inherit (lib) mkEnableOption mkOption mkIf types;
+        cfg = config.services.push-notification-api;
+      in {
+        options.services.push-notification-api = {
+          enable = mkEnableOption "Push notification API";
 
             package = mkOption {
               description = "What package to use.";
@@ -90,62 +109,64 @@
             };
           };
 
-          config = mkIf cfg.enable {
-            # Create a user to run the server under.
-            users.users.push-notification-api = {
-              description = "Runs push notification API service";
-              group = "push-notification-api";
-              isSystemUser = true;
-              home = "/srv/push-notification-api";
-              createHome = true;
+        config = mkIf cfg.enable {
+          # Create a user to run the server under.
+          users.users.push-notification-api = {
+            description = "Runs push notification API service";
+            group = "push-notification-api";
+            isSystemUser = true;
+            home = "/srv/push-notification-api";
+            createHome = true;
+          };
+          users.groups.push-notification-api = {};
+
+          # Create a service which runs the server.
+          systemd.services.push-notification-api = {
+            description = "Push notification API server";
+
+            wantedBy = ["multi-user.target"];
+            after = ["network.target"];
+
+            serviceConfig = {
+              Type = "notify";
+              User = config.users.users.push-notification-api.name;
+              Group = config.users.users.push-notification-api.group;
+              WorkingDirectory = config.users.users.push-notification-api.home;
+              ExecStart = ''
+                "${cfg.package}"/bin/push-notification-api
+              '';
+
+              # Harden service
+              NoNewPrivileges = "yes";
+              PrivateTmp = "yes";
+              PrivateDevices = "yes";
+              DevicePolicy = "closed";
+              ProtectControlGroups = "yes";
+              ProtectKernelModules = "yes";
+              ProtectKernelTunables = "yes";
+              RestrictAddressFamilies = "AF_UNIX AF_INET AF_INET6 AF_NETLINK";
+              RestrictNamespaces = "yes";
+              RestrictRealtime = "yes";
+              RestrictSUIDSGID = "yes";
+              MemoryDenyWriteExecute = "yes";
+              LockPersonality = "yes";
             };
-            users.groups.push-notification-api = { };
+          };
 
-            # Create a service which runs the server.
-            systemd.services.push-notification-api = {
-              description = "Push notification API server";
+          # Create a socket which the server will listen on
+          systemd.sockets.push-notification-api = {
+            description = "Socket where the service of the same name answers HTTP requests.";
 
-              after = [ "network.target" ];
+            after = [ "network.target" ];
+            wantedBy = ["multi-user.target"];
 
-              serviceConfig = {
-                Type = "notify";
-                User = config.users.users.push-notification-api.name;
-                Group = config.users.users.push-notification-api.group;
-                WorkingDirectory = config.users.users.push-notification-api.home;
-                ExecStart = ''
-                 "${cfg.package}"/bin/push-notification-api
-                '';
-
-                # Harden service
-                NoNewPrivileges = "yes";
-                PrivateTmp = "yes";
-                PrivateDevices = "yes";
-                DevicePolicy = "closed";
-                ProtectControlGroups = "yes";
-                ProtectKernelModules = "yes";
-                ProtectKernelTunables = "yes";
-                RestrictAddressFamilies = "AF_UNIX AF_INET AF_INET6 AF_NETLINK";
-                RestrictNamespaces = "yes";
-                RestrictRealtime = "yes";
-                RestrictSUIDSGID = "yes";
-                MemoryDenyWriteExecute = "yes";
-                LockPersonality = "yes";
-              };
-            };
-
-            # Create a socket which the server will listen on
-            systemd.sockets.push-notification-api = {
-              description = "Socket where the service of the same name answers HTTP requests.";
-
-              wantedBy = [ "multi-user.target" ];
-
-              socketConfig = {
-                ListenStream = cfg.socket-path;
-                SocketUser = cfg.socket-owner;
-                SocketMode = "600";
-              };
+            socketConfig = {
+              ListenStream = cfg.socket-path;
+              SocketUser = cfg.socket-owner;
+              SocketMode = "600";
             };
           };
         };
       };
+    };
 }

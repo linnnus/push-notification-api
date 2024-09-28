@@ -19,6 +19,7 @@ app = utils.Application()
 
 ## Middleware
 
+
 def convert_json(app: utils.Application, request: werkzeug.Request, next):
     """Middleware that converts all response and return-values (except
     :ref:`werkzeug.wrappers.Response`) in `/api` routes to JSON responses."""
@@ -38,35 +39,35 @@ def convert_json(app: utils.Application, request: werkzeug.Request, next):
             code = body.code or 500
             data = {
                 "success": False,
-                "info": {
-                    "code": code,
-                    "message": body.description
-                }
+                "info": {"code": code, "message": body.description},
             }
             return werkzeug.Response(json.dumps(data), status=code)
         elif isinstance(body, werkzeug.Response):
             # Don't alter Response objects.
             return body
         else:
-            data = { "success": True, "data": body }
+            data = {"success": True, "data": body}
             return werkzeug.Response(json.dumps(data))
     else:
         return next()
+
 
 app.use(utils.add_timing_header)
 app.use(convert_json)
 
 ## routes
 
+
 @app.route("/api/application-server-key.json")
 def application_server_key(vapid: py_vapid.Vapid02):
     # Based on https://github.com/web-push-libs/vapid/blob/4b33f37badef47d1cdaa8a3bb9ad64c741bf731a/python/py_vapid/main.py#L68-L74
     raw_pub = vapid.public_key.public_bytes(
-       cryptography.hazmat.primitives.serialization.Encoding.X962,
-       cryptography.hazmat.primitives.serialization.PublicFormat.UncompressedPoint
+        cryptography.hazmat.primitives.serialization.Encoding.X962,
+        cryptography.hazmat.primitives.serialization.PublicFormat.UncompressedPoint,
     )
     key = py_vapid.b64urlencode(raw_pub)
-    return { "key": key }
+    return {"key": key}
+
 
 @app.route("/api/submit-subscription", method="POST")
 def submit_subscription(db: shelve.Shelf, request: werkzeug.Request):
@@ -82,7 +83,8 @@ def submit_subscription(db: shelve.Shelf, request: werkzeug.Request):
     token = hash_json(subscription)[:15]
     db[token] = subscription
     print("just set", db[token])
-    return { "token": token }
+    return {"token": token}
+
 
 def validate_subscription_json(subscription: t.Any):
     if not isinstance(subscription, dict):
@@ -95,6 +97,7 @@ def validate_subscription_json(subscription: t.Any):
         raise ValueError("Missing property 'keys'")
     if not isinstance(subscription["keys"], dict):
         raise ValueError("Property 'endpoint' should be an object")
+
 
 # https://gist.github.com/magnetikonline/b226a6d2b5c2bc99fbbf20f0f607bbeb
 def hash_json(data: t.Any) -> str:
@@ -122,6 +125,7 @@ def hash_json(data: t.Any) -> str:
 
     return hash.hexdigest()
 
+
 @app.route("/api/send-notification/<token>", method="POST")
 def send_notification(db: shelve.Shelf, request: werkzeug.Request, token: str):
     try:
@@ -142,8 +146,12 @@ def send_notification(db: shelve.Shelf, request: werkzeug.Request, token: str):
         raise exc
 
     try:
-        pywebpush.webpush(subscription, notification_text, vapid_private_key=vapid,
-                          vapid_claims={ "sub": "mailto:linusvejlo+vapid@gmail.com" })
+        pywebpush.webpush(
+            subscription,
+            notification_text,
+            vapid_private_key=vapid,
+            vapid_claims={"sub": "mailto:linusvejlo+vapid@gmail.com"},
+        )
     except pywebpush.WebPushException as error:
         description = f"Request to Web Push server failed"
         if error.response and (extra := error.response.json()):
@@ -153,6 +161,7 @@ def send_notification(db: shelve.Shelf, request: werkzeug.Request, token: str):
         raise exc
 
     return "idk man what'd you wnat me to say. it worked."
+
 
 def validate_notification_json(notification: t.Any):
     if not isinstance(notification, dict):
@@ -166,14 +175,19 @@ def validate_notification_json(notification: t.Any):
     if "url" in notification and not isinstance(notification["url"], str):
         raise ValueError("Optional property 'url' should be a string")
 
+
 @app.route("/")
 def redirect_to_index():
     raise werkzeug.routing.exceptions.RequestRedirect("/index.html")
 
+
 # Serve static files from `./public`.
-app.wsgi_app = werkzeug.middleware.shared_data.SharedDataMiddleware(app.wsgi_app, {
-    "/": os.path.join(os.path.dirname(__file__), "public"),
-})
+app.wsgi_app = werkzeug.middleware.shared_data.SharedDataMiddleware(
+    app.wsgi_app,
+    {
+        "/": os.path.join(os.path.dirname(__file__), "public"),
+    },
+)
 
 # Handle running behind a proxy like NGINX.
 app.wsgi_app = werkzeug.middleware.proxy_fix.ProxyFix(app.wsgi_app)
