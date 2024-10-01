@@ -90,24 +90,24 @@
         options.services.push-notification-api = {
           enable = mkEnableOption "Push notification API";
 
-            package = mkOption {
-              description = "What package to use.";
-              default = self.packages.${pkgs.system}.default;
-              type = types.package;
-            };
-
-            socket-path = mkOption {
-              description = "Path to socket where the server will listen.";
-              type = types.str;
-              default = "/run/push-notification-api.sock";
-            };
-
-            socket-owner = mkOption {
-              description = "Owner of socket at `socket-path`. Change this if you are not using NGINX as the reverse proxy.";
-              type = types.str;
-              default = "nginx"; # TODO: Don't hardcode this value.
-            };
+          package = mkOption {
+            description = "What package to use.";
+            default = self.packages.${pkgs.system}.default;
+            type = types.package;
           };
+
+          socket-path = mkOption {
+            description = "Path to socket where the server will listen.";
+            type = types.str;
+            default = "/run/push-notification-api.sock";
+          };
+
+          socket-owner = mkOption {
+            description = "Owner of socket at `socket-path`. Change this if you are not using NGINX as the reverse proxy.";
+            type = types.str;
+            default = "nginx"; # TODO: Don't hardcode this value.
+          };
+        };
 
         config = mkIf cfg.enable {
           # Create a user to run the server under.
@@ -122,10 +122,11 @@
 
           # Create a service which runs the server.
           systemd.services.push-notification-api = {
-            description = "Push notification API server";
-
-            wantedBy = ["multi-user.target"];
-            after = ["network.target"];
+            unitConfig = {
+              Description = "Push notification API server";
+              After = ["network.target" "push-notification-api.socket"];
+              Requires = ["push-notification-api.socket"]; # Prevent manual instantiation without socket.
+            };
 
             serviceConfig = {
               Type = "notify";
@@ -157,7 +158,7 @@
           systemd.sockets.push-notification-api = {
             description = "Socket where the service of the same name answers HTTP requests.";
 
-            after = [ "network.target" ];
+            after = ["network.target"];
             wantedBy = ["multi-user.target"];
 
             socketConfig = {
