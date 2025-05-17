@@ -124,7 +124,7 @@
           systemd.services.push-notification-api = {
             unitConfig = {
               Description = "Push notification API server";
-              After = ["network.target" "push-notification-api.socket"];
+              After = ["network-online.target" "push-notification-api.socket"];
               Requires = ["push-notification-api.socket"]; # Prevent manual instantiation without socket.
             };
 
@@ -158,7 +158,6 @@
           systemd.sockets.push-notification-api = {
             description = "Socket where the service of the same name answers HTTP requests.";
 
-            after = ["network.target"];
             wantedBy = ["multi-user.target"];
 
             socketConfig = {
